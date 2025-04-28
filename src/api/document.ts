@@ -364,3 +364,46 @@ export async function uploadImage(documentId: string, formData: FormData) {
   )
   return response.data
 }
+
+// 获取PDF注释
+export async function getPdfAnnotations(documentId: string) {
+  const response = await axios.get<{ code: number; data: { items: any[] } }>(
+    `${API_URL}/documents/${documentId}/annotations`
+  )
+  return response.data
+}
+
+// 添加PDF注释
+export async function addPdfAnnotation(documentId: string, data: any) {
+  const response = await axios.post<{ code: number; data: any }>(
+    `${API_URL}/documents/${documentId}/annotations`,
+    data
+  )
+  return response.data
+}
+
+// 更新PDF注释
+export async function updatePdfAnnotation(documentId: string, annotationId: string, data: any) {
+  const response = await axios.put<{ code: number; data: any }>(
+    `${API_URL}/documents/${documentId}/annotations/${annotationId}`,
+    data
+  )
+  return response.data
+}
+
+// 删除PDF注释
+export async function deletePdfAnnotation(documentId: string, annotationId: string) {
+  const response = await axios.delete<{ code: number; data: any }>(
+    `${API_URL}/documents/${documentId}/annotations/${annotationId}`
+  )
+  return response.data
+}
+
+// 添加注释评论
+export async function addAnnotationComment(documentId: string, annotationId: string, data: any) {
+  const response = await axios.post<{ code: number; data: any }>(
+    `${API_URL}/documents/${documentId}/annotations/${annotationId}/comments`,
+    data
+  )
+  return response.data
+}

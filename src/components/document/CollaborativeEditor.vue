@@ -196,6 +196,7 @@ import CommentsPanel from './CommentsPanel.vue'
 const TextEditor = defineAsyncComponent(() => import('./editors/TextEditor.vue'))
 const MarkdownEditor = defineAsyncComponent(() => import('./editors/MarkdownEditor.vue'))
 const SpreadsheetEditor = defineAsyncComponent(() => import('./editors/SpreadsheetEditor.vue'))
+const PdfViewer = defineAsyncComponent(() => import('./editors/PdfViewer.vue'))
 
 const props = defineProps({
   documentId: {
@@ -265,6 +266,8 @@ const editorComponent = computed(() => {
     case 'PPT':
       // PPT只支持预览，不支持编辑
       return null
+    case 'PDF':
+      return PdfViewer
     case 'WORD':
     case 'TEXT':
     default:
