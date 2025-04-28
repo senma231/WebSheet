@@ -150,40 +150,16 @@
     <el-dialog
       v-model="showHistoryDialog"
       title="历史版本"
-      width="600px"
+      width="800px"
+      destroy-on-close
     >
-      <div v-if="isLoadingVersions" class="loading-versions">
-        <el-icon class="loading-icon"><Loading /></el-icon>
-        <p>加载中...</p>
-      </div>
-
-      <el-empty v-else-if="documentVersions.length === 0" description="没有历史版本" />
-
-      <el-timeline v-else>
-        <el-timeline-item
-          v-for="version in documentVersions"
-          :key="version.id"
-          :timestamp="formatDate(version.created_at)"
-          placement="top"
-        >
-          <el-card>
-            <div class="version-item">
-              <div class="version-info">
-                <h4>版本 {{ version.version }}</h4>
-                <p v-if="version.comment">{{ version.comment }}</p>
-                <p class="version-meta">
-                  大小: {{ formatFileSize(version.size) }}
-                </p>
-              </div>
-
-              <div class="version-actions">
-                <el-button size="small" @click="previewVersion(version)">预览</el-button>
-                <el-button size="small" type="primary" @click="restoreVersion(version)">恢复</el-button>
-              </div>
-            </div>
-          </el-card>
-        </el-timeline-item>
-      </el-timeline>
+      <version-history
+        v-if="document"
+        :document-id="document.id"
+        :document-type="document.type"
+        :can-delete="isOwner"
+        @version-restored="handleVersionRestored"
+      />
     </el-dialog>
 
     <!-- 分享文档对话框 -->
@@ -296,7 +272,7 @@ import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Back, Edit, ArrowDown, ArrowRight, Loading, Bold, Italic, List, Tickets, Link, PictureFilled, Headings, Memo, Histogram, Aim } from '@element-plus/icons-vue'
-import { getDocument, getDocumentVersions, shareDocument, updateDocument } from '@/api/document'
+import { getDocument, getDocumentVersions, shareDocument, updateDocument, restoreDocumentVersion } from '@/api/document'
 import type { Document, DocumentVersion } from '@/types/document'
 import type { Comment } from '@/types/comment'
 import { formatDate as formatDateUtil } from '@/utils/date'
@@ -308,6 +284,7 @@ import CommentList from '@/components/document/CommentList.vue'
 import CollaborationPanel from '@/components/document/CollaborationPanel.vue'
 import CursorOverlay from '@/components/document/CursorOverlay.vue'
 import ExportOptions from '@/components/document/ExportOptions.vue'
+import VersionHistory from '@/components/document/VersionHistory.vue'
 
 // 导入Vue-Office组件
 // 注意：这些组件需要安装并在main.ts中全局注册，或者在这里局部导入
@@ -355,6 +332,12 @@ const markdownPreview = computed(() => {
   if (!markdownContent.value) return ''
   const html = marked(markdownContent.value)
   return DOMPurify.sanitize(html)
+})
+
+// 是否是文档所有者
+const isOwner = computed(() => {
+  if (!document.value || !authStore.user) return false
+  return document.value.owner_id === authStore.user.id
 })
 
 // 生命周期钩子
@@ -574,14 +557,19 @@ function restoreVersion(version: DocumentVersion) {
     }
   ).then(async () => {
     try {
-      // 调用恢复API
-      // await restoreDocumentVersion(document.value.id, version.version)
-      ElMessage.success('版本已恢复')
+      if (!document.value) return
+
+      await restoreDocumentVersion(document.value.id, version.version)
+      ElMessage.success(`已恢复到版本 ${version.version}`)
+
+      // 重新加载文档
       await loadDocument()
+
+      // 关闭对话框
       showHistoryDialog.value = false
     } catch (error) {
       console.error('Failed to restore version', error)
-      ElMessage.error('恢复失败')
+      ElMessage.error('恢复版本失败')
     }
   }).catch(() => {
     // 用户取消恢复
@@ -669,6 +657,12 @@ function handleCommentDeleted(comment: Comment) {
 function handleExportComplete(fileUrl: string, fileName: string) {
   showExportDialog.value = false
   ElMessage.success(`文档已成功导出为 ${fileName}`)
+}
+
+// 版本控制相关方法
+function handleVersionRestored(version: DocumentVersion) {
+  ElMessage.success(`已恢复到版本 ${version.version}`)
+  loadDocument() // 重新加载文档
 }
 
 // 获取用户标题（显示状态）

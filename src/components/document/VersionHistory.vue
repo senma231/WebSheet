@@ -1,18 +1,25 @@
 <template>
   <div class="version-history">
     <div class="version-header">
-      <h3>版本历史</h3>
+      <div class="header-left">
+        <h3>版本历史</h3>
+        <el-radio-group v-model="viewMode" size="small">
+          <el-radio-button label="history">历史记录</el-radio-button>
+          <el-radio-button label="compare">版本比较</el-radio-button>
+        </el-radio-group>
+      </div>
       <el-button type="primary" size="small" @click="createNewVersion">创建新版本</el-button>
     </div>
-    
+
     <div v-if="loading" class="loading-container">
       <el-icon class="loading-icon"><Loading /></el-icon>
       <p>加载中...</p>
     </div>
-    
+
     <el-empty v-else-if="versions.length === 0" description="没有版本历史记录" />
-    
-    <el-timeline v-else>
+
+    <!-- 历史记录视图 -->
+    <el-timeline v-else-if="viewMode === 'history'">
       <el-timeline-item
         v-for="version in versions"
         :key="version.id"
@@ -26,17 +33,17 @@
               <span class="version-number">版本 {{ version.version }}</span>
               <el-tag v-if="version.is_current" type="success" size="small">当前版本</el-tag>
             </div>
-            
+
             <div class="version-meta">
               <span>{{ version.created_by_name }}</span>
               <span>{{ formatFileSize(version.size) }}</span>
             </div>
-            
+
             <div v-if="version.comment" class="version-comment">
               {{ version.comment }}
             </div>
           </div>
-          
+
           <div class="version-actions">
             <el-tooltip content="预览" placement="top">
               <el-button
@@ -48,7 +55,7 @@
                 @click="previewVersion(version)"
               />
             </el-tooltip>
-            
+
             <el-tooltip content="恢复" placement="top">
               <el-button
                 v-if="!version.is_current"
@@ -60,7 +67,7 @@
                 @click="restoreVersion(version)"
               />
             </el-tooltip>
-            
+
             <el-tooltip content="下载" placement="top">
               <el-button
                 type="info"
@@ -71,7 +78,7 @@
                 @click="downloadVersion(version)"
               />
             </el-tooltip>
-            
+
             <el-tooltip content="删除" placement="top">
               <el-button
                 v-if="!version.is_current && canDelete"
@@ -87,7 +94,17 @@
         </el-card>
       </el-timeline-item>
     </el-timeline>
-    
+
+    <!-- 版本比较视图 -->
+    <div v-else-if="viewMode === 'compare'" class="compare-view">
+      <version-compare
+        :document-id="documentId"
+        :document-type="documentType"
+        :versions="versions"
+        @preview-version="previewVersion"
+      />
+    </div>
+
     <!-- 创建新版本对话框 -->
     <el-dialog
       v-model="showCreateDialog"
@@ -103,7 +120,7 @@
             placeholder="请输入版本说明（可选）"
           />
         </el-form-item>
-        
+
         <el-form-item label="上传文件">
           <el-upload
             class="upload-area"
@@ -124,7 +141,7 @@
           </el-upload>
         </el-form-item>
       </el-form>
-      
+
       <template #footer>
         <el-button @click="showCreateDialog = false">取消</el-button>
         <el-button
@@ -137,7 +154,7 @@
         </el-button>
       </template>
     </el-dialog>
-    
+
     <!-- 版本预览对话框 -->
     <el-dialog
       v-model="showPreviewDialog"
@@ -149,14 +166,14 @@
         <el-icon class="loading-icon"><Loading /></el-icon>
         <p>加载中...</p>
       </div>
-      
+
       <div v-else class="preview-container">
         <!-- 这里将根据文档类型显示不同的预览组件 -->
         <div class="preview-placeholder">
           <p>版本预览将在这里显示</p>
         </div>
       </div>
-      
+
       <template #footer>
         <el-button @click="showPreviewDialog = false">关闭</el-button>
         <el-button
@@ -175,12 +192,17 @@
 import { ref, computed, onMounted, defineProps, defineEmits } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Loading, View, RefreshRight, Download, Delete, Upload } from '@element-plus/icons-vue'
-import { getDocumentVersions, createDocumentVersion, deleteDocumentVersion } from '@/api/document'
+import { getDocumentVersions, createDocumentVersion, deleteDocumentVersion, restoreDocumentVersion } from '@/api/document'
 import { formatDate as formatDateUtil } from '@/utils/date'
+import VersionCompare from './VersionCompare.vue'
 
 // 定义属性
 const props = defineProps({
   documentId: {
+    type: String,
+    required: true
+  },
+  documentType: {
     type: String,
     required: true
   },
@@ -196,6 +218,7 @@ const emit = defineEmits(['version-restored', 'version-created', 'version-delete
 // 状态
 const loading = ref(true)
 const versions = ref<any[]>([])
+const viewMode = ref('history') // 'history' 或 'compare'
 const showCreateDialog = ref(false)
 const showPreviewDialog = ref(false)
 const previewLoading = ref(false)
@@ -216,7 +239,7 @@ onMounted(() => {
 // 方法
 async function loadVersions() {
   loading.value = true
-  
+
   try {
     const response = await getDocumentVersions(props.documentId)
     versions.value = response.data.items.map((item: any) => ({
@@ -248,22 +271,22 @@ async function uploadNewVersion() {
     ElMessage.warning('请选择要上传的文件')
     return
   }
-  
+
   uploading.value = true
-  
+
   try {
     await createDocumentVersion(
       props.documentId,
       versionForm.value.file,
       versionForm.value.comment
     )
-    
+
     ElMessage.success('新版本已创建')
     showCreateDialog.value = false
-    
+
     // 重新加载版本列表
     await loadVersions()
-    
+
     // 触发事件
     emit('version-created')
   } catch (error) {
@@ -278,7 +301,7 @@ function previewVersion(version: any) {
   selectedVersion.value = version
   showPreviewDialog.value = true
   previewLoading.value = true
-  
+
   // 模拟加载预览
   setTimeout(() => {
     previewLoading.value = false
@@ -297,16 +320,16 @@ function restoreVersion(version: any) {
   ).then(async () => {
     try {
       // 调用恢复API
-      // await restoreDocumentVersion(props.documentId, version.version)
-      
+      await restoreDocumentVersion(props.documentId, version.version)
+
       ElMessage.success(`已恢复到版本 ${version.version}`)
-      
+
       // 关闭预览对话框
       showPreviewDialog.value = false
-      
+
       // 重新加载版本列表
       await loadVersions()
-      
+
       // 触发事件
       emit('version-restored', version)
     } catch (error) {
@@ -321,7 +344,7 @@ function restoreVersion(version: any) {
 function downloadVersion(version: any) {
   // 创建下载链接
   const downloadUrl = `/api/v1/documents/${props.documentId}/versions/${version.version}/download`
-  
+
   // 创建临时链接并点击
   const link = document.createElement('a')
   link.href = downloadUrl
@@ -343,12 +366,12 @@ function deleteVersion(version: any) {
   ).then(async () => {
     try {
       await deleteDocumentVersion(props.documentId, version.version)
-      
+
       ElMessage.success(`已删除版本 ${version.version}`)
-      
+
       // 重新加载版本列表
       await loadVersions()
-      
+
       // 触发事件
       emit('version-deleted', version)
     } catch (error) {
@@ -389,8 +412,18 @@ function formatFileSize(size: number) {
   margin-bottom: 16px;
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
 .version-header h3 {
   margin: 0;
+}
+
+.compare-view {
+  padding: 16px;
 }
 
 .loading-container {

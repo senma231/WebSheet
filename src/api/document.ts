@@ -9,7 +9,7 @@ export async function getDocuments(page = 1, size = 20, folderId?: string) {
   if (folderId) {
     params.parent_folder_id = folderId
   }
-  
+
   const response = await axios.get(`${API_URL}/documents`, { params })
   return response.data
 }
@@ -25,21 +25,21 @@ export async function createDocument(file: File, title: string, description?: st
   const formData = new FormData()
   formData.append('file', file)
   formData.append('title', title)
-  
+
   if (description) {
     formData.append('description', description)
   }
-  
+
   if (parentFolderId) {
     formData.append('parent_folder_id', parentFolderId)
   }
-  
+
   const response = await axios.post(`${API_URL}/documents`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
     }
   })
-  
+
   return response.data
 }
 
@@ -67,17 +67,45 @@ export async function getDocumentVersions(documentId: string) {
 export async function createDocumentVersion(documentId: string, file: File, comment?: string) {
   const formData = new FormData()
   formData.append('file', file)
-  
+
   if (comment) {
     formData.append('comment', comment)
   }
-  
+
   const response = await axios.post(`${API_URL}/documents/${documentId}/versions`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
     }
   })
-  
+
+  return response.data
+}
+
+// 恢复文档版本
+export async function restoreDocumentVersion(documentId: string, versionNumber: number) {
+  const response = await axios.post(`${API_URL}/documents/${documentId}/versions/${versionNumber}/restore`)
+  return response.data
+}
+
+// 删除文档版本
+export async function deleteDocumentVersion(documentId: string, versionNumber: number) {
+  const response = await axios.delete(`${API_URL}/documents/${documentId}/versions/${versionNumber}`)
+  return response.data
+}
+
+// 比较文档版本
+export async function compareDocumentVersions(documentId: string, versionNumber1: number, versionNumber2: number) {
+  const response = await axios.get(
+    `${API_URL}/documents/${documentId}/versions/compare?version1=${versionNumber1}&version2=${versionNumber2}`
+  )
+  return response.data
+}
+
+// 获取文档版本详情
+export async function getDocumentVersion(documentId: string, versionNumber: number) {
+  const response = await axios.get<{ code: number; data: DocumentVersion }>(
+    `${API_URL}/documents/${documentId}/versions/${versionNumber}`
+  )
   return response.data
 }
 
@@ -87,7 +115,7 @@ export async function getFolders(parentId?: string) {
   if (parentId) {
     params.parent_id = parentId
   }
-  
+
   const response = await axios.get<{ code: number; data: { items: Folder[] } }>(`${API_URL}/folders`, { params })
   return response.data
 }
@@ -98,7 +126,7 @@ export async function createFolder(name: string, parentId?: string) {
   if (parentId) {
     data.parent_id = parentId
   }
-  
+
   const response = await axios.post(`${API_URL}/folders`, data)
   return response.data
 }
@@ -109,11 +137,11 @@ export async function shareDocument(documentId: string, permissionLevel: 'READ' 
     document_id: documentId,
     permission_level: permissionLevel
   }
-  
+
   if (expiresAt) {
     data.expires_at = expiresAt
   }
-  
+
   const response = await axios.post<{ code: number; data: Share }>(`${API_URL}/shares`, data)
   return response.data
 }
