@@ -350,3 +350,17 @@ export async function getDocumentLockStatus(documentId: string) {
   )
   return response.data
 }
+
+// 上传图片
+export async function uploadImage(documentId: string, formData: FormData) {
+  const response = await axios.post<{ code: number; data: { url: string } }>(
+    `${API_URL}/documents/${documentId}/images`,
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    }
+  )
+  return response.data
+}

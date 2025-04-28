@@ -6,14 +6,14 @@
         <div class="document-status">
           <el-tag v-if="isConnected" type="success" size="small">已连接</el-tag>
           <el-tag v-else type="danger" size="small">未连接</el-tag>
-          
+
           <el-tag v-if="isSaving" type="warning" size="small">保存中...</el-tag>
           <el-tag v-else-if="lastSaved" type="info" size="small">
             {{ lastSavedText }}
           </el-tag>
         </div>
       </div>
-      
+
       <div class="editor-actions">
         <el-button-group>
           <el-button
@@ -25,7 +25,7 @@
           >
             保存
           </el-button>
-          
+
           <el-button
             :icon="View"
             @click="showVersionHistory = true"
@@ -33,10 +33,10 @@
             版本历史
           </el-button>
         </el-button-group>
-        
+
         <el-dropdown trigger="click" @command="handleCommand">
           <el-button :icon="MoreFilled" />
-          
+
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item command="share">分享文档</el-dropdown-item>
@@ -49,7 +49,7 @@
         </el-dropdown>
       </div>
     </div>
-    
+
     <div class="editor-container">
       <div class="editor-main">
         <div v-if="isLocked && !canUnlock" class="locked-overlay">
@@ -61,7 +61,7 @@
             :closable="false"
           />
         </div>
-        
+
         <div v-if="showConflict" class="conflict-overlay">
           <conflict-resolver
             :conflict="currentConflict"
@@ -70,7 +70,7 @@
             @cancel="cancelConflict"
           />
         </div>
-        
+
         <!-- 编辑器组件，根据文档类型加载不同的编辑器 -->
         <component
           :is="editorComponent"
@@ -82,12 +82,12 @@
           @change="handleContentChange"
           @cursor-change="handleCursorChange"
         />
-        
+
         <div v-else class="editor-placeholder">
           <el-empty description="不支持的文档类型" />
         </div>
       </div>
-      
+
       <div class="editor-sidebar" v-if="showSidebar">
         <el-tabs v-model="activeTab">
           <el-tab-pane label="协作者" name="collaborators">
@@ -98,7 +98,7 @@
               @jump-to-cursor="jumpToCursor"
             />
           </el-tab-pane>
-          
+
           <el-tab-pane label="评论" name="comments">
             <comments-panel
               :document-id="documentId"
@@ -108,7 +108,7 @@
         </el-tabs>
       </div>
     </div>
-    
+
     <!-- 版本历史对话框 -->
     <el-drawer
       v-model="showVersionHistory"
@@ -123,7 +123,7 @@
         @version-restored="handleVersionRestored"
       />
     </el-drawer>
-    
+
     <!-- 分享对话框 -->
     <el-dialog
       v-model="showShareDialog"
@@ -137,7 +137,7 @@
             <el-radio label="WRITE">可编辑</el-radio>
           </el-radio-group>
         </el-form-item>
-        
+
         <el-form-item label="有效期">
           <el-select v-model="shareForm.expiration" style="width: 100%">
             <el-option label="永久有效" value="never" />
@@ -146,7 +146,7 @@
             <el-option label="30天" value="30d" />
             <el-option label="自定义" value="custom" />
           </el-select>
-          
+
           <el-date-picker
             v-if="shareForm.expiration === 'custom'"
             v-model="shareForm.expirationDate"
@@ -156,7 +156,7 @@
           />
         </el-form-item>
       </el-form>
-      
+
       <div v-if="shareLink" class="share-link">
         <el-input v-model="shareLink" readonly>
           <template #append>
@@ -164,7 +164,7 @@
           </template>
         </el-input>
       </div>
-      
+
       <template #footer>
         <el-button @click="showShareDialog = false">取消</el-button>
         <el-button
@@ -196,7 +196,6 @@ import CommentsPanel from './CommentsPanel.vue'
 const TextEditor = defineAsyncComponent(() => import('./editors/TextEditor.vue'))
 const MarkdownEditor = defineAsyncComponent(() => import('./editors/MarkdownEditor.vue'))
 const SpreadsheetEditor = defineAsyncComponent(() => import('./editors/SpreadsheetEditor.vue'))
-const PresentationEditor = defineAsyncComponent(() => import('./editors/PresentationEditor.vue'))
 
 const props = defineProps({
   documentId: {
@@ -257,14 +256,15 @@ const authStore = useAuthStore()
 // 计算属性
 const editorComponent = computed(() => {
   if (!document.value) return null
-  
+
   switch (document.value.type) {
     case 'MARKDOWN':
       return MarkdownEditor
     case 'EXCEL':
       return SpreadsheetEditor
     case 'PPT':
-      return PresentationEditor
+      // PPT只支持预览，不支持编辑
+      return null
     case 'WORD':
     case 'TEXT':
     default:
@@ -294,16 +294,16 @@ onMounted(async () => {
   await loadDocument()
   await loadDocumentContent()
   await checkLockStatus()
-  
+
   // 连接协同编辑服务
   connect(props.documentId)
-  
+
   // 监听操作
   onOperationReceived(handleRemoteOperation)
-  
+
   // 监听冲突
   onConflictDetected(handleConflict)
-  
+
   // 设置自动保存
   if (!props.readOnly) {
     autoSaveInterval.value = window.setInterval(() => {
@@ -317,7 +317,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   // 断开协同编辑服务
   disconnect()
-  
+
   // 清除自动保存定时器
   if (autoSaveInterval.value !== null) {
     window.clearInterval(autoSaveInterval.value)
@@ -357,24 +357,24 @@ async function checkLockStatus() {
 
 async function saveDocument(autoSave = false) {
   if (isReadOnly.value || !hasChanges.value) return
-  
+
   isSaving.value = true
-  
+
   try {
     // 获取当前内容
     const currentContent = editorRef.value?.getContent() || content.value
-    
+
     // 保存到服务器
     await saveDocumentContent(props.documentId, currentContent, autoSave)
-    
+
     // 更新状态
     lastSaved.value = new Date()
     hasChanges.value = false
-    
+
     if (!autoSave) {
       ElMessage.success('文档已保存')
     }
-    
+
     // 触发事件
     emit('saved')
   } catch (error) {
@@ -388,7 +388,7 @@ async function saveDocument(autoSave = false) {
 function handleContentChange(newContent: any) {
   // 标记有更改
   hasChanges.value = true
-  
+
   // 发送操作到协同编辑服务
   if (isConnected.value) {
     sendOperation({
@@ -409,7 +409,7 @@ function handleCursorChange(position: any) {
 
 function handleRemoteOperation(operation: any, user: any) {
   console.log('Received remote operation', operation, 'from user', user)
-  
+
   // 处理不同类型的操作
   if (operation.type === 'content_change') {
     // 更新编辑器内容
@@ -421,7 +421,7 @@ function handleRemoteOperation(operation: any, user: any) {
 
 function handleConflict(conflict: any) {
   console.log('Conflict detected', conflict)
-  
+
   // 显示冲突解决界面
   currentConflict.value = conflict
   showConflict.value = true
@@ -430,17 +430,17 @@ function handleConflict(conflict: any) {
 function resolveConflict(resolution: { conflictId: string; resolution: 'local' | 'remote' | 'merge' }) {
   // 解决冲突
   const resolvedOperation = resolveConflictById(resolution.conflictId, resolution.resolution)
-  
+
   if (resolvedOperation) {
     // 应用解决后的操作
     if (editorRef.value) {
       editorRef.value.applyResolvedConflict(resolvedOperation)
     }
-    
+
     // 隐藏冲突界面
     showConflict.value = false
     currentConflict.value = null
-    
+
     ElMessage.success('冲突已解决')
   }
 }
@@ -470,10 +470,10 @@ function previewVersion(version: any) {
 function handleVersionRestored(version: any) {
   // 重新加载文档内容
   loadDocumentContent()
-  
+
   // 触发事件
   emit('version-restored', version)
-  
+
   ElMessage.success(`已恢复到版本 ${version.version}`)
 }
 
@@ -483,24 +483,24 @@ async function handleCommand(command: string) {
       showShareDialog.value = true
       shareLink.value = ''
       break
-      
+
     case 'download':
       // 实现下载逻辑
       window.open(`/api/documents/${props.documentId}/download`, '_blank')
       break
-      
+
     case 'print':
       // 实现打印逻辑
       window.print()
       break
-      
+
     case 'lock':
       await lockDocument(props.documentId)
       isLocked.value = true
       lockedBy.value = authStore.user?.id
       ElMessage.success('文档已锁定')
       break
-      
+
     case 'unlock':
       await unlockDocument(props.documentId)
       isLocked.value = false
@@ -512,11 +512,11 @@ async function handleCommand(command: string) {
 
 async function createShareLink() {
   isCreatingShare.value = true
-  
+
   try {
     // 计算过期时间
     let expiresAt: string | undefined
-    
+
     if (shareForm.value.expiration === 'never') {
       expiresAt = undefined
     } else if (shareForm.value.expiration === 'custom' && shareForm.value.expirationDate) {
@@ -527,18 +527,18 @@ async function createShareLink() {
       date.setDate(date.getDate() + days)
       expiresAt = date.toISOString()
     }
-    
+
     // 调用分享API
     const response = await shareDocument(
       props.documentId,
       shareForm.value.permissionLevel,
       expiresAt
     )
-    
+
     // 设置分享链接
     const baseUrl = window.location.origin
     shareLink.value = `${baseUrl}/share/${response.data.access_code}`
-    
+
     ElMessage.success('分享链接已创建')
   } catch (error) {
     console.error('Failed to create share link', error)

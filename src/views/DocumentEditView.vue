@@ -287,8 +287,7 @@ import ExportOptions from '@/components/document/ExportOptions.vue'
 import VersionHistory from '@/components/document/VersionHistory.vue'
 
 // 导入Vue-Office组件
-// 注意：这些组件需要安装并在main.ts中全局注册，或者在这里局部导入
-// import { VueOfficeDocx, VueOfficeXlsx, VueOfficePptx, VueOfficePdf } from 'vue-office'
+import { VueOfficeDocx, VueOfficeXlsx, VueOfficePptx, VueOfficePdf } from 'vue-office'
 
 const router = useRouter()
 const route = useRoute()
