@@ -46,6 +46,7 @@
               <el-dropdown-item command="permissions">权限管理</el-dropdown-item>
               <el-dropdown-item command="comments">评论</el-dropdown-item>
               <el-dropdown-item command="history">历史版本</el-dropdown-item>
+              <el-dropdown-item command="export">导出</el-dropdown-item>
               <el-dropdown-item command="download">下载</el-dropdown-item>
               <el-dropdown-item command="print">打印</el-dropdown-item>
             </el-dropdown-menu>
@@ -249,6 +250,23 @@
       />
     </el-dialog>
 
+    <!-- 导出对话框 -->
+    <el-dialog
+      v-model="showExportDialog"
+      title="导出文档"
+      width="600px"
+      destroy-on-close
+    >
+      <export-options
+        v-if="document"
+        :document-id="document.id"
+        :document-title="document.title"
+        :document-type="document.type"
+        @cancel="showExportDialog = false"
+        @export-complete="handleExportComplete"
+      />
+    </el-dialog>
+
     <!-- 协作面板 -->
     <div class="collaboration-container" :class="{ 'panel-open': showCollaborationPanel }">
       <div class="editor-area">
@@ -289,6 +307,7 @@ import DOMPurify from 'dompurify'
 import CommentList from '@/components/document/CommentList.vue'
 import CollaborationPanel from '@/components/document/CollaborationPanel.vue'
 import CursorOverlay from '@/components/document/CursorOverlay.vue'
+import ExportOptions from '@/components/document/ExportOptions.vue'
 
 // 导入Vue-Office组件
 // 注意：这些组件需要安装并在main.ts中全局注册，或者在这里局部导入
@@ -321,6 +340,9 @@ const shareForm = ref({
 // 评论相关
 const showCommentsDialog = ref(false)
 const highlightedCommentId = ref('')
+
+// 导出相关
+const showExportDialog = ref(false)
 
 // 协同编辑
 const showCollaborationPanel = ref(false)
@@ -433,6 +455,10 @@ function handleCommand(command: string) {
     case 'history':
       loadDocumentVersions()
       showHistoryDialog.value = true
+      break
+
+    case 'export':
+      showExportDialog.value = true
       break
 
     case 'download':
@@ -637,6 +663,12 @@ function handleCommentUpdated(comment: Comment) {
 
 function handleCommentDeleted(comment: Comment) {
   ElMessage.success('评论已删除')
+}
+
+// 导出相关方法
+function handleExportComplete(fileUrl: string, fileName: string) {
+  showExportDialog.value = false
+  ElMessage.success(`文档已成功导出为 ${fileName}`)
 }
 
 // 获取用户标题（显示状态）
