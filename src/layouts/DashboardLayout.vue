@@ -15,31 +15,46 @@
             <el-icon><Document /></el-icon>
             <template #title>我的文档</template>
           </el-menu-item>
-          
+
+          <el-menu-item index="/dashboard/recent">
+            <el-icon><Clock /></el-icon>
+            <template #title>最近访问</template>
+          </el-menu-item>
+
+          <el-menu-item index="/dashboard/favorites">
+            <el-icon><Star /></el-icon>
+            <template #title>我的收藏</template>
+          </el-menu-item>
+
           <el-menu-item index="/dashboard/shared">
             <el-icon><Share /></el-icon>
             <template #title>共享文档</template>
           </el-menu-item>
-          
+
           <el-menu-item index="/dashboard/templates">
             <el-icon><Files /></el-icon>
             <template #title>模板</template>
           </el-menu-item>
-          
+
           <el-menu-item index="/dashboard/trash">
             <el-icon><Delete /></el-icon>
             <template #title>回收站</template>
           </el-menu-item>
-          
+
           <el-divider />
-          
+
+          <el-menu-item index="/dashboard/search">
+            <el-icon><Search /></el-icon>
+            <template #title>搜索</template>
+          </el-menu-item>
+
           <el-menu-item index="/dashboard/settings">
             <el-icon><Setting /></el-icon>
             <template #title>设置</template>
           </el-menu-item>
         </el-menu>
       </el-aside>
-      
+
       <el-container class="layout-main">
         <el-header class="layout-header">
           <div class="header-left">
@@ -48,9 +63,40 @@
               :icon="isCollapse ? 'Expand' : 'Fold'"
               @click="toggleSidebar"
             />
+
+            <div class="global-search">
+              <el-input
+                v-model="searchQuery"
+                placeholder="搜索文档..."
+                prefix-icon="Search"
+                clearable
+                @keydown.enter="performSearch"
+                @clear="clearSearch"
+              >
+                <template #append>
+                  <el-button @click="performSearch">搜索</el-button>
+                </template>
+              </el-input>
+            </div>
           </div>
-          
+
           <div class="header-right">
+            <el-button
+              circle
+              @click="router.push('/dashboard/recent')"
+              title="最近访问"
+            >
+              <el-icon><Clock /></el-icon>
+            </el-button>
+
+            <el-button
+              circle
+              @click="router.push('/dashboard/favorites')"
+              title="我的收藏"
+            >
+              <el-icon><Star /></el-icon>
+            </el-button>
+
             <el-dropdown trigger="click" @command="handleCommand">
               <div class="user-profile">
                 <el-avatar :size="32" :src="userAvatar">
@@ -59,7 +105,7 @@
                 <span class="username">{{ username }}</span>
                 <el-icon><ArrowDown /></el-icon>
               </div>
-              
+
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item command="profile">个人资料</el-dropdown-item>
@@ -70,7 +116,7 @@
             </el-dropdown>
           </div>
         </el-header>
-        
+
         <el-main class="layout-content">
           <router-view />
         </el-main>
@@ -82,7 +128,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Document, Share, Files, Delete, Setting, Expand, Fold, ArrowDown } from '@element-plus/icons-vue'
+import { Document, Share, Files, Delete, Setting, Expand, Fold, ArrowDown, Clock, Star, Search } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
@@ -90,6 +136,7 @@ const route = useRoute()
 const authStore = useAuthStore()
 
 const isCollapse = ref(false)
+const searchQuery = ref('')
 
 const activeMenu = computed(() => route.path)
 
@@ -102,6 +149,19 @@ const userInitials = computed(() => {
 
 function toggleSidebar() {
   isCollapse.value = !isCollapse.value
+}
+
+function performSearch() {
+  if (!searchQuery.value.trim()) return
+
+  router.push({
+    path: '/dashboard/search',
+    query: { q: searchQuery.value }
+  })
+}
+
+function clearSearch() {
+  searchQuery.value = ''
 }
 
 function handleCommand(command: string) {
@@ -168,6 +228,12 @@ function handleCommand(command: string) {
 .header-left, .header-right {
   display: flex;
   align-items: center;
+  gap: 16px;
+}
+
+.global-search {
+  width: 400px;
+  margin-left: 16px;
 }
 
 .user-profile {

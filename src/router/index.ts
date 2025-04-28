@@ -50,6 +50,24 @@ const routes: Array<RouteRecordRaw> = [
         name: 'trash',
         component: () => import('@/views/TrashView.vue'),
         meta: { requiresAuth: true }
+      },
+      {
+        path: 'search',
+        name: 'search',
+        component: () => import('@/views/SearchView.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'favorites',
+        name: 'favorites',
+        component: () => import('@/views/FavoritesView.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'recent',
+        name: 'recent',
+        component: () => import('@/views/RecentView.vue'),
+        meta: { requiresAuth: true }
       }
     ]
   },

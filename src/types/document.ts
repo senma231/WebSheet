@@ -10,11 +10,15 @@ export interface Document {
   size: number;
   version: number;
   is_template: boolean;
+  is_favorite?: boolean;
+  tags?: string[];
+  last_accessed_at?: string;
   created_at: string;
   updated_at: string;
   owner?: {
     id: string;
     username: string;
+    avatar_url?: string;
   };
 }
 
@@ -34,8 +38,16 @@ export interface Folder {
   name: string;
   parent_id?: string;
   owner_id: string;
+  is_favorite?: boolean;
+  document_count?: number;
+  folder_count?: number;
   created_at: string;
   updated_at: string;
+  owner?: {
+    id: string;
+    username: string;
+    avatar_url?: string;
+  };
 }
 
 export interface Share {
