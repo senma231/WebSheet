@@ -56,9 +56,10 @@ export async function deleteDocument(id: string) {
 }
 
 // 获取文档版本列表
-export async function getDocumentVersions(documentId: string) {
-  const response = await axios.get<{ code: number; data: { items: DocumentVersion[] } }>(
-    `${API_URL}/documents/${documentId}/versions`
+export async function getDocumentVersions(documentId: string, params?: { page?: number; size?: number }) {
+  const response = await axios.get<{ code: number; data: { items: DocumentVersion[]; total: number } }>(
+    `${API_URL}/documents/${documentId}/versions`,
+    { params }
   )
   return response.data
 }
@@ -234,6 +235,118 @@ export async function shareDocument(documentId: string, permissionLevel: 'READ' 
 export async function getShareInfo(accessCode: string) {
   const response = await axios.get<{ code: number; data: { document: Document; permission_level: string } }>(
     `${API_URL}/share/${accessCode}`
+  )
+  return response.data
+}
+
+// 获取文档协作者列表
+export async function getDocumentCollaborators(documentId: string) {
+  const response = await axios.get<{ code: number; data: { items: any[] } }>(
+    `${API_URL}/documents/${documentId}/collaborators`
+  )
+  return response.data
+}
+
+// 邀请协作者
+export async function inviteDocumentCollaborator(
+  documentId: string,
+  email: string,
+  permission: string,
+  message?: string
+) {
+  const data: Record<string, any> = {
+    email,
+    permission
+  }
+
+  if (message) {
+    data.message = message
+  }
+
+  const response = await axios.post(
+    `${API_URL}/documents/${documentId}/collaborators`,
+    data
+  )
+  return response.data
+}
+
+// 移除协作者
+export async function removeDocumentCollaborator(documentId: string, userId: string) {
+  const response = await axios.delete(
+    `${API_URL}/documents/${documentId}/collaborators/${userId}`
+  )
+  return response.data
+}
+
+// 更新协作者权限
+export async function updateCollaboratorPermission(
+  documentId: string,
+  userId: string,
+  permission: string
+) {
+  const response = await axios.put(
+    `${API_URL}/documents/${documentId}/collaborators/${userId}`,
+    { permission }
+  )
+  return response.data
+}
+
+// 获取文档变更历史
+export async function getDocumentChanges(documentId: string, params?: { page?: number; size?: number }) {
+  const response = await axios.get<{ code: number; data: { items: any[]; total: number } }>(
+    `${API_URL}/documents/${documentId}/changes`,
+    { params }
+  )
+  return response.data
+}
+
+// 获取文档变更详情
+export async function getDocumentChange(documentId: string, changeId: string) {
+  const response = await axios.get<{ code: number; data: any }>(
+    `${API_URL}/documents/${documentId}/changes/${changeId}`
+  )
+  return response.data
+}
+
+// 保存文档内容
+export async function saveDocumentContent(documentId: string, content: any, autoSave: boolean = false) {
+  const response = await axios.put(
+    `${API_URL}/documents/${documentId}/content`,
+    { content, auto_save: autoSave }
+  )
+  return response.data
+}
+
+// 获取文档内容
+export async function getDocumentContent(documentId: string, versionId?: string) {
+  const params: Record<string, any> = {}
+  if (versionId) {
+    params.version_id = versionId
+  }
+
+  const response = await axios.get<{ code: number; data: any }>(
+    `${API_URL}/documents/${documentId}/content`,
+    { params }
+  )
+  return response.data
+}
+
+// 锁定文档
+export async function lockDocument(documentId: string) {
+  const response = await axios.post(`${API_URL}/documents/${documentId}/lock`)
+  return response.data
+}
+
+// 解锁文档
+export async function unlockDocument(documentId: string) {
+  const response = await axios.post(`${API_URL}/documents/${documentId}/unlock`)
+  return response.data
+}
+
+// 获取文档锁状态
+export async function getDocumentLockStatus(documentId: string) {
+  const response = await axios.get<{ code: number; data: { locked: boolean; locked_by?: string } }>(
+    `${API_URL}/documents/${documentId}/lock-status`
   )
   return response.data
 }

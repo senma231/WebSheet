@@ -68,6 +68,12 @@ const routes: Array<RouteRecordRaw> = [
         name: 'recent',
         component: () => import('@/views/RecentView.vue'),
         meta: { requiresAuth: true }
+      },
+      {
+        path: 'document/:id',
+        name: 'document',
+        component: () => import('@/views/DocumentView.vue'),
+        meta: { requiresAuth: true }
       }
     ]
   },

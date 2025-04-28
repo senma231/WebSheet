@@ -7,19 +7,19 @@
           {{ permissionLevel === 'READ' ? '只读' : '可编辑' }}
         </el-tag>
       </div>
-      
+
       <div class="header-right">
         <el-button @click="goToHome">返回首页</el-button>
         <el-button v-if="isAuthenticated" type="primary" @click="saveToMyDocs">保存到我的文档</el-button>
       </div>
     </div>
-    
+
     <div class="shared-content">
       <div v-if="isLoading" class="loading-container">
         <el-icon class="loading-icon"><Loading /></el-icon>
         <p>加载中...</p>
       </div>
-      
+
       <div v-else-if="loadError" class="error-container">
         <el-empty description="加载文档失败">
           <template #description>
@@ -28,56 +28,15 @@
           <el-button @click="loadSharedDocument">重试</el-button>
         </el-empty>
       </div>
-      
+
       <div v-else class="document-container">
-        <!-- Word文档查看器 -->
-        <div v-if="document?.type === 'WORD'" class="word-viewer">
-          <vue-office-docx
-            v-if="documentUrl"
-            :src="documentUrl"
-            @rendered="handleDocRendered"
-          />
-        </div>
-        
-        <!-- Excel表格查看器 -->
-        <div v-else-if="document?.type === 'EXCEL'" class="excel-viewer">
-          <vue-office-xlsx
-            v-if="documentUrl"
-            :src="documentUrl"
-            @rendered="handleDocRendered"
-          />
-        </div>
-        
-        <!-- PPT演示文稿查看器 -->
-        <div v-else-if="document?.type === 'PPT'" class="ppt-viewer">
-          <vue-office-pptx
-            v-if="documentUrl"
-            :src="documentUrl"
-            @rendered="handleDocRendered"
-          />
-        </div>
-        
-        <!-- PDF查看器 -->
-        <div v-else-if="document?.type === 'PDF'" class="pdf-viewer">
-          <vue-office-pdf
-            v-if="documentUrl"
-            :src="documentUrl"
-            @rendered="handleDocRendered"
-          />
-        </div>
-        
-        <!-- Markdown查看器 -->
-        <div v-else-if="document?.type === 'MARKDOWN'" class="markdown-viewer">
-          <div v-html="markdownContent"></div>
-        </div>
-        
-        <!-- 默认查看器 -->
-        <div v-else class="default-viewer">
-          <el-empty description="不支持的文档类型" />
-        </div>
+        <collaborative-editor
+          :document-id="document?.id"
+          :read-only="permissionLevel === 'READ'"
+        />
       </div>
     </div>
-    
+
     <!-- 登录提示对话框 -->
     <el-dialog
       v-model="showLoginDialog"
@@ -98,11 +57,10 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Loading } from '@element-plus/icons-vue'
-import { getShareInfo } from '@/api/document'
+import { getShareInfo, saveDocumentCopy } from '@/api/document'
 import type { Document } from '@/types/document'
 import { useAuthStore } from '@/stores/auth'
-import { marked } from 'marked'
-import DOMPurify from 'dompurify'
+import CollaborativeEditor from '@/components/document/CollaborativeEditor.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -127,7 +85,7 @@ onMounted(async () => {
     router.push('/')
     return
   }
-  
+
   await loadSharedDocument()
 })
 
@@ -136,16 +94,16 @@ async function loadSharedDocument() {
   const accessCode = route.params.code as string
   isLoading.value = true
   loadError.value = null
-  
+
   try {
     const response = await getShareInfo(accessCode)
     document.value = response.data.document
     permissionLevel.value = response.data.permission_level as 'READ' | 'WRITE'
-    
+
     // 设置文档URL
     // 在实际应用中，这应该是从API获取的URL
     documentUrl.value = `/api/v1/share/${accessCode}/content`
-    
+
     // 如果是Markdown文档，加载内容
     if (document.value.type === 'MARKDOWN') {
       // 这里应该有一个API来获取Markdown内容
@@ -174,14 +132,24 @@ function goToLogin() {
   router.push('/login')
 }
 
-function saveToMyDocs() {
+async function saveToMyDocs() {
   if (!isAuthenticated.value) {
     showLoginDialog.value = true
     return
   }
-  
-  // 这里应该有一个API来保存共享文档到我的文档
-  ElMessage.success('文档已保存到我的文档')
+
+  if (!document.value) return
+
+  try {
+    const response = await saveDocumentCopy(document.value.id)
+    ElMessage.success('文档已保存到我的文档')
+
+    // 导航到保存的文档
+    router.push(`/dashboard/document/${response.data.id}`)
+  } catch (error) {
+    console.error('Failed to save document copy', error)
+    ElMessage.error('保存文档失败')
+  }
 }
 </script>
 
