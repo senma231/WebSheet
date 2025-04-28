@@ -131,6 +131,90 @@ export async function createFolder(name: string, parentId?: string) {
   return response.data
 }
 
+// 获取文件夹详情
+export async function getFolder(id: string) {
+  const response = await axios.get<{ code: number; data: Folder }>(`${API_URL}/folders/${id}`)
+  return response.data
+}
+
+// 更新文件夹
+export async function updateFolder(id: string, data: { name?: string }) {
+  const response = await axios.put(`${API_URL}/folders/${id}`, data)
+  return response.data
+}
+
+// 删除文件夹
+export async function deleteFolder(id: string) {
+  const response = await axios.delete(`${API_URL}/folders/${id}`)
+  return response.data
+}
+
+// 获取文件夹路径
+export async function getFolderPath(id: string) {
+  const response = await axios.get<{ code: number; data: { path: Folder[] } }>(`${API_URL}/folders/${id}/path`)
+  return response.data
+}
+
+// 移动文档
+export async function moveDocument(id: string, targetFolderId?: string) {
+  const data: Record<string, any> = {}
+  if (targetFolderId) {
+    data.parent_folder_id = targetFolderId
+  }
+
+  const response = await axios.post(`${API_URL}/documents/${id}/move`, data)
+  return response.data
+}
+
+// 复制文档
+export async function copyDocument(id: string, targetFolderId?: string) {
+  const data: Record<string, any> = {}
+  if (targetFolderId) {
+    data.parent_folder_id = targetFolderId
+  }
+
+  const response = await axios.post(`${API_URL}/documents/${id}/copy`, data)
+  return response.data
+}
+
+// 移动文件夹
+export async function moveFolder(id: string, targetFolderId?: string) {
+  const data: Record<string, any> = {}
+  if (targetFolderId) {
+    data.parent_id = targetFolderId
+  }
+
+  const response = await axios.post(`${API_URL}/folders/${id}/move`, data)
+  return response.data
+}
+
+// 获取回收站文档列表
+export async function getTrashDocuments(page = 1, size = 20) {
+  const response = await axios.get<{ code: number; data: { items: Document[], total: number } }>(
+    `${API_URL}/trash/documents`,
+    { params: { page, size } }
+  )
+  return response.data
+}
+
+// 恢复回收站文档
+export async function restoreDocument(id: string) {
+  const response = await axios.post(`${API_URL}/trash/documents/${id}/restore`)
+  return response.data
+}
+
+// 永久删除回收站文档
+export async function permanentDeleteDocument(id: string) {
+  const response = await axios.delete(`${API_URL}/trash/documents/${id}/permanent`)
+  return response.data
+}
+
+// 清空回收站
+export async function emptyTrash() {
+  const response = await axios.delete(`${API_URL}/trash/empty`)
+  return response.data
+}
+
 // 分享文档
 export async function shareDocument(documentId: string, permissionLevel: 'READ' | 'WRITE', expiresAt?: string) {
   const data: Record<string, any> = {

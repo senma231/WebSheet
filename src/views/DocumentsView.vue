@@ -4,7 +4,7 @@
       <div class="header-title">
         <h2>我的文档</h2>
       </div>
-      
+
       <div class="header-actions">
         <el-input
           v-model="searchQuery"
@@ -14,7 +14,7 @@
           @clear="handleSearch"
           @input="handleSearch"
         />
-        
+
         <el-button-group>
           <el-button
             :icon="viewMode === 'grid' ? 'Menu' : 'Grid'"
@@ -22,13 +22,13 @@
           />
           <el-button :icon="Sort" @click="showSortOptions = true" />
         </el-button-group>
-        
+
         <el-button type="primary" @click="showCreateDialog = true">
           新建文档
         </el-button>
       </div>
     </div>
-    
+
     <div class="documents-breadcrumb">
       <el-breadcrumb separator="/">
         <el-breadcrumb-item :to="{ path: '/dashboard' }">全部文档</el-breadcrumb-item>
@@ -37,23 +37,23 @@
         </el-breadcrumb-item>
       </el-breadcrumb>
     </div>
-    
+
     <div class="documents-content">
       <el-empty v-if="isLoading" description="加载中...">
         <template #image>
           <el-icon class="loading-icon"><Loading /></el-icon>
         </template>
       </el-empty>
-      
+
       <el-empty v-else-if="filteredDocuments.length === 0 && filteredFolders.length === 0" description="没有文档">
         <el-button type="primary" @click="showCreateDialog = true">新建文档</el-button>
       </el-empty>
-      
+
       <template v-else>
         <!-- 文件夹列表 -->
         <div v-if="filteredFolders.length > 0" class="folders-section">
           <h3>文件夹</h3>
-          
+
           <div :class="['folders-list', viewMode === 'grid' ? 'grid-view' : 'list-view']">
             <div
               v-for="folder in filteredFolders"
@@ -71,11 +71,11 @@
             </div>
           </div>
         </div>
-        
+
         <!-- 文档列表 -->
         <div v-if="filteredDocuments.length > 0" class="documents-section">
           <h3>文档</h3>
-          
+
           <div :class="['documents-list', viewMode === 'grid' ? 'grid-view' : 'list-view']">
             <div
               v-for="document in filteredDocuments"
@@ -90,7 +90,7 @@
                 <el-icon v-else-if="document.type === 'PDF'"><Files /></el-icon>
                 <el-icon v-else><Document /></el-icon>
               </div>
-              
+
               <div class="document-info">
                 <div class="document-name">{{ document.title }}</div>
                 <div class="document-meta">
@@ -98,17 +98,18 @@
                   <span>{{ formatDate(document.updated_at) }}</span>
                 </div>
               </div>
-              
+
               <div class="document-actions">
                 <el-dropdown trigger="click" @command="(command) => handleDocumentAction(command, document)">
                   <el-button type="text" :icon="MoreFilled" />
-                  
+
                   <template #dropdown>
                     <el-dropdown-menu>
                       <el-dropdown-item command="edit">编辑</el-dropdown-item>
                       <el-dropdown-item command="share">分享</el-dropdown-item>
                       <el-dropdown-item command="rename">重命名</el-dropdown-item>
                       <el-dropdown-item command="move">移动</el-dropdown-item>
+                      <el-dropdown-item command="copy">复制</el-dropdown-item>
                       <el-dropdown-item command="download">下载</el-dropdown-item>
                       <el-dropdown-item divided command="delete">删除</el-dropdown-item>
                     </el-dropdown-menu>
@@ -120,7 +121,7 @@
         </div>
       </template>
     </div>
-    
+
     <!-- 新建文档对话框 -->
     <el-dialog
       v-model="showCreateDialog"
@@ -138,11 +139,11 @@
                 <el-radio-button label="MARKDOWN">Markdown</el-radio-button>
               </el-radio-group>
             </el-form-item>
-            
+
             <el-form-item label="文档名称">
               <el-input v-model="newDocumentForm.title" placeholder="请输入文档名称" />
             </el-form-item>
-            
+
             <el-form-item label="文档描述">
               <el-input
                 v-model="newDocumentForm.description"
@@ -152,7 +153,7 @@
             </el-form-item>
           </el-form>
         </el-tab-pane>
-        
+
         <el-tab-pane label="上传文档" name="upload">
           <el-upload
             class="upload-area"
@@ -171,12 +172,12 @@
               </div>
             </template>
           </el-upload>
-          
+
           <el-form v-if="uploadFile" :model="uploadForm" label-position="top">
             <el-form-item label="文档名称">
               <el-input v-model="uploadForm.title" placeholder="请输入文档名称" />
             </el-form-item>
-            
+
             <el-form-item label="文档描述">
               <el-input
                 v-model="uploadForm.description"
@@ -186,7 +187,7 @@
             </el-form-item>
           </el-form>
         </el-tab-pane>
-        
+
         <el-tab-pane label="新建文件夹" name="folder">
           <el-form :model="newFolderForm" label-position="top">
             <el-form-item label="文件夹名称">
@@ -195,13 +196,13 @@
           </el-form>
         </el-tab-pane>
       </el-tabs>
-      
+
       <template #footer>
         <el-button @click="showCreateDialog = false">取消</el-button>
         <el-button type="primary" @click="handleCreate">创建</el-button>
       </template>
     </el-dialog>
-    
+
     <!-- 分享文档对话框 -->
     <el-dialog
       v-model="showShareDialog"
@@ -210,7 +211,7 @@
     >
       <template v-if="selectedDocument">
         <p>您正在分享文档：{{ selectedDocument.title }}</p>
-        
+
         <el-form :model="shareForm" label-position="top">
           <el-form-item label="权限设置">
             <el-radio-group v-model="shareForm.permissionLevel">
@@ -218,7 +219,7 @@
               <el-radio label="WRITE">可编辑</el-radio>
             </el-radio-group>
           </el-form-item>
-          
+
           <el-form-item label="过期时间">
             <el-date-picker
               v-model="shareForm.expiresAt"
@@ -229,7 +230,7 @@
             />
           </el-form-item>
         </el-form>
-        
+
         <div v-if="shareLink" class="share-link-container">
           <p>分享链接：</p>
           <el-input
@@ -242,12 +243,32 @@
           </el-input>
         </div>
       </template>
-      
+
       <template #footer>
         <el-button @click="showShareDialog = false">关闭</el-button>
         <el-button v-if="!shareLink" type="primary" @click="handleShare">生成链接</el-button>
       </template>
     </el-dialog>
+
+    <!-- 移动文档对话框 -->
+    <move-document-dialog
+      v-model:visible="showMoveDialog"
+      :document-id="selectedItemForMove?.type === 'document' ? selectedItemForMove.id : ''"
+      :folder-id="selectedItemForMove?.type === 'folder' ? selectedItemForMove.id : ''"
+      :current-folder-id="currentFolderId"
+      mode="move"
+      @confirm="handleMoveConfirm"
+    />
+
+    <!-- 复制文档对话框 -->
+    <move-document-dialog
+      v-model:visible="showCopyDialog"
+      :document-id="selectedItemForMove?.type === 'document' ? selectedItemForMove.id : ''"
+      :folder-id="selectedItemForMove?.type === 'folder' ? selectedItemForMove.id : ''"
+      :current-folder-id="currentFolderId"
+      mode="copy"
+      @confirm="handleCopyConfirm"
+    />
   </div>
 </template>
 
@@ -257,8 +278,18 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Menu, Grid, Sort, Loading, Folder, Document, PictureFilled, Files, MoreFilled, Upload } from '@element-plus/icons-vue'
 import type { Document as DocumentType, Folder as FolderType } from '@/types/document'
-import { getDocuments, getFolders, createDocument, createFolder, shareDocument } from '@/api/document'
+import {
+  getDocuments,
+  getFolders,
+  createDocument,
+  createFolder,
+  shareDocument,
+  moveDocument,
+  copyDocument,
+  moveFolder
+} from '@/api/document'
 import { formatDate as formatDateUtil } from '@/utils/date'
+import MoveDocumentDialog from '@/components/document/MoveDocumentDialog.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -274,6 +305,8 @@ const searchQuery = ref('')
 const showSortOptions = ref(false)
 const sortBy = ref<'name' | 'date'>('date')
 const sortOrder = ref<'asc' | 'desc'>('desc')
+const selectedItems = ref<string[]>([])
+const selectionMode = ref(false)
 
 // 对话框状态
 const showCreateDialog = ref(false)
@@ -281,6 +314,9 @@ const createTabActive = ref('document')
 const showShareDialog = ref(false)
 const selectedDocument = ref<DocumentType | null>(null)
 const shareLink = ref('')
+const showMoveDialog = ref(false)
+const showCopyDialog = ref(false)
+const selectedItemForMove = ref<{ id: string, type: 'document' | 'folder' } | null>(null)
 
 // 表单数据
 const newDocumentForm = ref({
@@ -308,19 +344,19 @@ const shareForm = ref({
 // 计算属性
 const filteredDocuments = computed(() => {
   let result = documents.value
-  
+
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    result = result.filter(doc => 
-      doc.title.toLowerCase().includes(query) || 
+    result = result.filter(doc =>
+      doc.title.toLowerCase().includes(query) ||
       (doc.description && doc.description.toLowerCase().includes(query))
     )
   }
-  
+
   // 排序
   result = [...result].sort((a, b) => {
     if (sortBy.value === 'name') {
-      return sortOrder.value === 'asc' 
+      return sortOrder.value === 'asc'
         ? a.title.localeCompare(b.title)
         : b.title.localeCompare(a.title)
     } else {
@@ -329,22 +365,22 @@ const filteredDocuments = computed(() => {
       return sortOrder.value === 'asc' ? dateA - dateB : dateB - dateA
     }
   })
-  
+
   return result
 })
 
 const filteredFolders = computed(() => {
   let result = folders.value
-  
+
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     result = result.filter(folder => folder.name.toLowerCase().includes(query))
   }
-  
+
   // 排序
   result = [...result].sort((a, b) => {
     if (sortBy.value === 'name') {
-      return sortOrder.value === 'asc' 
+      return sortOrder.value === 'asc'
         ? a.name.localeCompare(b.name)
         : b.name.localeCompare(a.name)
     } else {
@@ -353,7 +389,7 @@ const filteredFolders = computed(() => {
       return sortOrder.value === 'asc' ? dateA - dateB : dateB - dateA
     }
   })
-  
+
   return result
 })
 
@@ -362,23 +398,23 @@ onMounted(async () => {
   // 从路由参数获取文件夹ID
   const folderId = route.query.folderId as string | undefined
   currentFolderId.value = folderId
-  
+
   await loadData()
 })
 
 // 方法
 async function loadData() {
   isLoading.value = true
-  
+
   try {
     // 加载文档
     const documentsResponse = await getDocuments(1, 100, currentFolderId.value)
     documents.value = documentsResponse.data.items
-    
+
     // 加载文件夹
     const foldersResponse = await getFolders(currentFolderId.value)
     folders.value = foldersResponse.data.items
-    
+
     // 加载面包屑路径
     if (currentFolderId.value) {
       // 这里应该有一个API来获取文件夹路径
@@ -425,13 +461,13 @@ function formatDocumentType(type: string) {
     'PDF': 'PDF文档',
     'MARKDOWN': 'Markdown'
   }
-  
+
   return typeMap[type] || type
 }
 
 function handleFileChange(file: any) {
   uploadFile.value = file.raw
-  
+
   // 自动填充文件名
   if (file.name && !uploadForm.value.title) {
     // 去掉扩展名
@@ -448,51 +484,51 @@ async function handleCreate() {
         ElMessage.warning('请输入文档名称')
         return
       }
-      
+
       // 这里应该调用API创建文档
       // 暂时使用模拟数据
       ElMessage.success('文档创建成功')
-      
+
     } else if (createTabActive.value === 'upload') {
       // 上传文档
       if (!uploadFile.value) {
         ElMessage.warning('请选择要上传的文件')
         return
       }
-      
+
       if (!uploadForm.value.title) {
         ElMessage.warning('请输入文档名称')
         return
       }
-      
+
       await createDocument(
         uploadFile.value,
         uploadForm.value.title,
         uploadForm.value.description,
         currentFolderId.value
       )
-      
+
       ElMessage.success('文档上传成功')
-      
+
     } else if (createTabActive.value === 'folder') {
       // 创建文件夹
       if (!newFolderForm.value.name) {
         ElMessage.warning('请输入文件夹名称')
         return
       }
-      
+
       await createFolder(newFolderForm.value.name, currentFolderId.value)
-      
+
       ElMessage.success('文件夹创建成功')
     }
-    
+
     // 重新加载数据
     await loadData()
-    
+
     // 关闭对话框并重置表单
     showCreateDialog.value = false
     resetForms()
-    
+
   } catch (error) {
     console.error('Failed to create', error)
     ElMessage.error('创建失败')
@@ -505,23 +541,23 @@ function resetForms() {
     title: '',
     description: ''
   }
-  
+
   uploadForm.value = {
     title: '',
     description: ''
   }
-  
+
   uploadFile.value = null
-  
+
   newFolderForm.value = {
     name: ''
   }
-  
+
   shareForm.value = {
     permissionLevel: 'READ',
     expiresAt: ''
   }
-  
+
   shareLink.value = ''
 }
 
@@ -530,24 +566,30 @@ function handleDocumentAction(action: string, document: DocumentType) {
     case 'edit':
       openDocument(document.id)
       break
-      
+
     case 'share':
       selectedDocument.value = document
       showShareDialog.value = true
       break
-      
+
     case 'rename':
       // 实现重命名逻辑
       break
-      
+
     case 'move':
-      // 实现移动逻辑
+      showMoveDialog.value = true
+      selectedItemForMove.value = { id: document.id, type: 'document' }
       break
-      
+
+    case 'copy':
+      showCopyDialog.value = true
+      selectedItemForMove.value = { id: document.id, type: 'document' }
+      break
+
     case 'download':
       // 实现下载逻辑
       break
-      
+
     case 'delete':
       ElMessageBox.confirm(
         `确定要删除文档 "${document.title}" 吗？`,
@@ -576,18 +618,18 @@ function handleDocumentAction(action: string, document: DocumentType) {
 
 async function handleShare() {
   if (!selectedDocument.value) return
-  
+
   try {
     const response = await shareDocument(
       selectedDocument.value.id,
       shareForm.value.permissionLevel,
       shareForm.value.expiresAt
     )
-    
+
     // 构建分享链接
     const baseUrl = window.location.origin
     shareLink.value = `${baseUrl}/share/${response.data.access_code}`
-    
+
     ElMessage.success('分享链接已生成')
   } catch (error) {
     console.error('Failed to share document', error)
@@ -603,6 +645,44 @@ function copyShareLink() {
     .catch(() => {
       ElMessage.error('复制失败')
     })
+}
+
+// 处理移动确认
+async function handleMoveConfirm(data: { documentId?: string, folderId?: string, targetFolderId: string | null }) {
+  try {
+    if (data.documentId) {
+      // 移动文档
+      await moveDocument(data.documentId, data.targetFolderId || undefined)
+      ElMessage.success('文档已移动')
+    } else if (data.folderId) {
+      // 移动文件夹
+      await moveFolder(data.folderId, data.targetFolderId || undefined)
+      ElMessage.success('文件夹已移动')
+    }
+
+    // 重新加载数据
+    await loadData()
+  } catch (error) {
+    console.error('Failed to move item', error)
+    ElMessage.error('移动失败')
+  }
+}
+
+// 处理复制确认
+async function handleCopyConfirm(data: { documentId?: string, targetFolderId: string | null }) {
+  try {
+    if (data.documentId) {
+      // 复制文档
+      await copyDocument(data.documentId, data.targetFolderId || undefined)
+      ElMessage.success('文档已复制')
+
+      // 重新加载数据
+      await loadData()
+    }
+  } catch (error) {
+    console.error('Failed to copy document', error)
+    ElMessage.error('复制失败')
+  }
 }
 </script>
 

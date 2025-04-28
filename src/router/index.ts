@@ -44,6 +44,12 @@ const routes: Array<RouteRecordRaw> = [
         name: 'template-management',
         component: () => import('@/views/TemplateManagementView.vue'),
         meta: { requiresAuth: true }
+      },
+      {
+        path: 'trash',
+        name: 'trash',
+        component: () => import('@/views/TrashView.vue'),
+        meta: { requiresAuth: true }
       }
     ]
   },
