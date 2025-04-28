@@ -1,0 +1,52 @@
+{
+  "name": "websheet",
+  "version": "0.1.0",
+  "private": true,
+  "description": "基于Vue-Office的在线文档编辑系统",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",
+    "format": "prettier --write src/",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.1.0",
+    "@vueuse/core": "^10.1.2",
+    "axios": "^1.4.0",
+    "element-plus": "^2.3.6",
+    "pinia": "^2.1.3",
+    "socket.io-client": "^4.6.2",
+    "vue": "^3.3.4",
+    "vue-office": "^1.2.2",
+    "vue-router": "^4.2.2"
+  },
+  "devDependencies": {
+    "@rushstack/eslint-patch": "^1.3.0",
+    "@tsconfig/node18": "^2.0.1",
+    "@types/node": "^18.16.16",
+    "@vitejs/plugin-vue": "^4.2.3",
+    "@vitest/coverage-v8": "^0.32.0",
+    "@vue/eslint-config-prettier": "^7.1.0",
+    "@vue/eslint-config-typescript": "^11.0.3",
+    "@vue/test-utils": "^2.3.2",
+    "eslint": "^8.42.0",
+    "eslint-plugin-vue": "^9.14.1",
+    "jsdom": "^22.1.0",
+    "prettier": "^2.8.8",
+    "sass": "^1.63.3",
+    "typescript": "~5.0.4",
+    "unplugin-auto-import": "^0.16.4",
+    "unplugin-vue-components": "^0.25.0",
+    "vite": "^4.3.9",
+    "vitest": "^0.32.0",
+    "vue-tsc": "^1.6.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
